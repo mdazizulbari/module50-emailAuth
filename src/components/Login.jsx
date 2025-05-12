@@ -1,11 +1,15 @@
-import { signInWithEmailAndPassword } from "firebase/auth";
-import React, { useState } from "react";
+import {
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import React, { useRef, useState } from "react";
 import { auth } from "../firebase/firebase.init";
 import { Link } from "react-router";
 
 const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [success, setSuccess] = useState(false);
+  const emailRef = useRef()
 
   const handleLogin = (event) => {
     event.preventDefault();
@@ -18,11 +22,28 @@ const Login = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((result) => {
         console.log(result.user);
-        setSuccess(true);
-        return;
+        if (!result.user.emailVerified) {
+          alert("Please verify your email");
+        } else {
+          setSuccess(true);
+          return;
+        }
       })
       .catch((error) => {
         console.log(error);
+        setErrorMessage(error.errorMessage);
+      });
+  };
+
+  const handleForgetPass = () => {
+    console.log(emailRef.current.value);
+    const email = emailRef.current.value;
+    setErrorMessage("");
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        alert("A password reset email is sent to your inbox");
+      })
+      .catch((error) => {
         setErrorMessage(error.errorMessage);
       });
   };
@@ -44,6 +65,7 @@ const Login = () => {
                 type="email"
                 name="email"
                 className="input"
+                ref={emailRef}
                 placeholder="Email"
               />
               <label className="label">Password</label>
@@ -53,7 +75,7 @@ const Login = () => {
                 className="input"
                 placeholder="Password"
               />
-              <div>
+              <div onClick={() => handleForgetPass()}>
                 <a className="link link-hover">Forgot password?</a>
               </div>
               <button className="btn btn-neutral mt-4">Login</button>
